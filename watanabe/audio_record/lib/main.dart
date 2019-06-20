@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
+import 'package:path_provider/path_provider.dart';
 
 import "package:intl/intl.dart";
 
@@ -23,8 +25,7 @@ class MyApp extends StatelessWidget {
 class Home extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(title: Text('Audio Record Test')), body: Recorder());
+    return Recorder();
   }
 }
 
@@ -36,56 +37,92 @@ class Recorder extends StatefulWidget {
 
 /// レコーダーステート
 class RecorderState extends State<Recorder> {
+  /// FlutterSound
   FlutterSound _flutterSound = new FlutterSound();
+
+  /// StreamSubscription
   StreamSubscription<PlayStatus> _playerSubscription;
+
+  /// 録音状態
   bool isRecording = false;
+
+  /// 再生状態
   bool isPlaying = false;
-  String _uri;
+
+  /// 保存先ディレクトリ
+  Directory _dir;
+
+  /// 選択ファイル
+  String _currentUri;
+
+  /// プレイヤーテキスト
   String _playerTxt = "";
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        Text(_playerTxt),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            IconButton(
-                onPressed: !isPlaying
-                    ? (isRecording
-                        ? onPressedRecordStopdButton
-                        : onPressedRecordButton)
-                    : null,
-                icon:
-                    Icon(isRecording ? Icons.stop : Icons.fiber_manual_record),
-                color: Colors.red,
-                iconSize: 128),
-            IconButton(
-                onPressed: _uri != null && !isRecording
-                    ? (isPlaying
-                        ? onPressedPlayStopButton
-                        : onPressedPlayButton)
-                    : null,
-                icon: Icon(isPlaying ? Icons.stop : Icons.play_arrow),
-                color: Colors.green,
-                iconSize: 128),
-          ],
-        )
-      ],
-    );
+  void initState() {
+    super.initState();
+    getApplicationDocumentsDirectory().then((Directory directory) {
+      _dir = directory;
+      _currentUri = directory.path + '/sound.m4a';
+    });
   }
 
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: Text('Audio Record Test'),
+          actions: <Widget>[
+            IconButton(icon: Icon(Icons.list), onPressed: _pushVoiceList),
+          ],
+        ),
+        body: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(_playerTxt),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                // 録音(停止)ボタン
+                IconButton(
+                    onPressed: !isPlaying
+                        ? (isRecording
+                            ? onPressedRecordStopdButton
+                            : onPressedRecordButton)
+                        : null,
+                    icon: Icon(
+                        isRecording ? Icons.stop : Icons.fiber_manual_record),
+                    color: Colors.red,
+                    iconSize: 128),
+                // 再生(停止)ボタン
+                IconButton(
+                    onPressed: _currentUri != null && !isRecording
+                        ? (isPlaying
+                            ? onPressedPlayStopButton
+                            : onPressedPlayButton)
+                        : null,
+                    icon: Icon(isPlaying ? Icons.stop : Icons.play_arrow),
+                    color: Colors.green,
+                    iconSize: 128),
+              ],
+            )
+          ],
+        ));
+  }
+
+  /// 録音ボタン押下時
   void onPressedRecordButton() async {
-    final String path = await _flutterSound.startRecorder(null);
-    _uri = path.replaceFirst('file:/', '');
+    final String currentDate =
+        DateFormat('yyyyMMddmmssSS').format(DateTime.now());
+    _currentUri = _dir.path + '/' + currentDate + ".m4a";
+    await _flutterSound.startRecorder(_currentUri);
     setState(() {
       _playerTxt = 'Recording...';
       isRecording = true;
     });
   }
 
+  /// 録音停止ボタン押下時処理
   void onPressedRecordStopdButton() async {
     await _flutterSound.stopRecorder();
     setState(() {
@@ -94,8 +131,9 @@ class RecorderState extends State<Recorder> {
     });
   }
 
+  /// 再生ボタン押下時処理
   void onPressedPlayButton() async {
-    await _flutterSound.startPlayer(_uri);
+    await _flutterSound.startPlayer(_currentUri);
 
     _playerSubscription = _flutterSound.onPlayerStateChanged.listen((e) {
       if (e != null) {
@@ -114,6 +152,7 @@ class RecorderState extends State<Recorder> {
     });
   }
 
+  /// 再生停止ボタン押下時処理
   void onPressedPlayStopButton() async {
     await _flutterSound.stopPlayer();
     if (_playerSubscription != null) {
@@ -123,5 +162,44 @@ class RecorderState extends State<Recorder> {
     setState(() {
       isPlaying = false;
     });
+  }
+
+  void _pushVoiceList() {
+    Iterable<Widget> tiles = _dir
+        .listSync()
+        .takeWhile((entity) => entity is File)
+        .map((entity) => entity as File)
+        .map((file) {
+      final String fileName = file.path.split('/').last.split('.').first;
+      return Dismissible(
+        key: Key(fileName),
+        child: ListTile(
+          title: Text(fileName),
+          onTap: () {},
+        ),
+        background: Container(color: Colors.red),
+        confirmDismiss: (direction) async {
+          return file.existsSync();
+        },
+        onDismissed: (direction) {
+          file.deleteSync();
+        },
+      );
+    });
+
+    final List<Widget> divided = ListTile.divideTiles(
+      context: context,
+      tiles: tiles,
+    ).toList();
+
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (BuildContext context) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Voice List'),
+        ),
+        body: Center(child: ListView(children: divided)),
+      );
+    }));
   }
 }
