@@ -165,17 +165,42 @@ class RecorderState extends State<Recorder> {
   }
 
   void _pushVoiceList() {
+    // 録音データの一覧
     Iterable<Widget> tiles = _dir
         .listSync()
         .takeWhile((entity) => entity is File)
         .map((entity) => entity as File)
         .map((file) {
-      final String fileName = file.path.split('/').last.split('.').first;
+      final String fileName = file.uri.path.split('/').last.split('.').first;
       return Dismissible(
         key: Key(fileName),
         child: ListTile(
-          title: Text(fileName),
-          onTap: () {},
+          title: Row(
+            children: [
+              // ファイル名
+              Text(fileName),
+              // 再生ボタン
+              IconButton(
+                icon: Icon(Icons.play_arrow),
+                iconSize: 32,
+                color: Colors.grey,
+                onPressed: () {
+                  setState(() {
+                    _currentUri = file.path;
+                    _playerTxt = fileName;
+                  });
+                  Navigator.of(context).pop();
+                },
+              ),
+              // 編集ボタン
+              IconButton(
+                icon: Icon(Icons.edit),
+                iconSize: 32,
+                color: Colors.grey,
+                onPressed: () {},
+              )
+            ],
+          ),
         ),
         background: Container(color: Colors.red),
         confirmDismiss: (direction) async {
