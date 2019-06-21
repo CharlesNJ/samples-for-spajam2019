@@ -171,18 +171,16 @@ class RecorderState extends State<Recorder> {
         .listSync()
         .takeWhile((entity) => entity is File)
         .map((entity) => entity as File)
-        .map((file) {
-      return RecordListTile(
-        file,
-        onPressedPlay: (file) {
-          setState(() {
-            _currentUri = file.path;
-            _playerTxt = file.path.split('/').last.split('.').first;
-          });
-          Navigator.of(context).pop();
-        },
-      );
-    });
+        .map((file) => RecordListTile(
+              file,
+              onPressedPlay: (file) {
+                setState(() {
+                  _currentUri = file.path;
+                  _playerTxt = file.path.split('/').last.split('.').first;
+                });
+                Navigator.of(context).pop();
+              },
+            ));
 
     final List<Widget> divided = ListTile.divideTiles(
       context: context,
@@ -201,6 +199,7 @@ class RecorderState extends State<Recorder> {
   }
 }
 
+/// 録音データのタイル
 class RecordListTile extends StatefulWidget {
   final File file;
   final void Function(File) onPressedPlay;
@@ -212,13 +211,24 @@ class RecordListTile extends StatefulWidget {
       RecordListTileState(file, onPressedPlay: onPressedPlay);
 }
 
+/// 録音データのタイルステート
 class RecordListTileState extends State<RecordListTile> {
+  /// ファイル
   File file;
+
+  /// 再生ボタン押下時の処理
   void Function(File) onPressedPlay;
+
+  /// 編集中か
   bool isEditing = false;
+
+  /// ファイル名
   String fileName;
+
+  /// 一時ファイル名
   String _tmpFileName;
 
+  /// コンストラクタ
   RecordListTileState(this.file, {this.onPressedPlay}) {
     fileName = file.uri.path.split('/').last.split('.').first;
   }
