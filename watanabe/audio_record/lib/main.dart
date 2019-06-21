@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -171,43 +172,14 @@ class RecorderState extends State<Recorder> {
         .takeWhile((entity) => entity is File)
         .map((entity) => entity as File)
         .map((file) {
-      final String fileName = file.uri.path.split('/').last.split('.').first;
-      return Dismissible(
-        key: Key(fileName),
-        child: ListTile(
-          title: Row(
-            children: [
-              // ファイル名
-              Text(fileName),
-              // 再生ボタン
-              IconButton(
-                icon: Icon(Icons.play_arrow),
-                iconSize: 32,
-                color: Colors.grey,
-                onPressed: () {
-                  setState(() {
-                    _currentUri = file.path;
-                    _playerTxt = fileName;
-                  });
-                  Navigator.of(context).pop();
-                },
-              ),
-              // 編集ボタン
-              IconButton(
-                icon: Icon(Icons.edit),
-                iconSize: 32,
-                color: Colors.grey,
-                onPressed: () {},
-              )
-            ],
-          ),
-        ),
-        background: Container(color: Colors.red),
-        confirmDismiss: (direction) async {
-          return file.existsSync();
-        },
-        onDismissed: (direction) {
-          file.deleteSync();
+      return RecordListTile(
+        file,
+        onPressedPlay: (file) {
+          setState(() {
+            _currentUri = file.path;
+            _playerTxt = file.path.split('/').last.split('.').first;
+          });
+          Navigator.of(context).pop();
         },
       );
     });
@@ -226,5 +198,88 @@ class RecorderState extends State<Recorder> {
         body: Center(child: ListView(children: divided)),
       );
     }));
+  }
+}
+
+class RecordListTile extends StatefulWidget {
+  final File file;
+  final void Function(File) onPressedPlay;
+
+  RecordListTile(this.file, {this.onPressedPlay});
+
+  @override
+  RecordListTileState createState() =>
+      RecordListTileState(file, onPressedPlay: onPressedPlay);
+}
+
+class RecordListTileState extends State<RecordListTile> {
+  File file;
+  void Function(File) onPressedPlay;
+  bool isEditing = false;
+  String fileName;
+  String _tmpFileName;
+
+  RecordListTileState(this.file, {this.onPressedPlay}) {
+    fileName = file.uri.path.split('/').last.split('.').first;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dismissible(
+      key: Key(fileName),
+      child: ListTile(
+        title: Row(
+          children: [
+            // 再生ボタン
+            IconButton(
+              icon: Icon(Icons.play_arrow),
+              iconSize: 32,
+              color: Colors.grey,
+              onPressed: () => onPressedPlay(file),
+            ),
+            // 編集ボタン
+            IconButton(
+              icon: Icon(Icons.edit),
+              iconSize: 32,
+              color: Colors.grey,
+              onPressed: () {
+                setState(() {
+                  isEditing = true;
+                });
+              },
+            ),
+            // ファイル名
+            isEditing
+                ? Flexible(
+                    child: Container(
+                      child: TextField(
+                        autofocus: true,
+                        controller: TextEditingController(text: fileName),
+                        onChanged: (s) {
+                          _tmpFileName = s;
+                        },
+                        onEditingComplete: () {
+                          setState(() {
+                            file = file.renameSync(file.path.replaceAll(
+                                fileName + ".m4a", _tmpFileName + ".m4a"));
+                            fileName = _tmpFileName;
+                            isEditing = false;
+                          });
+                        },
+                      ),
+                    ),
+                  )
+                : Text(fileName),
+          ],
+        ),
+      ),
+      background: Container(color: Colors.red),
+      confirmDismiss: (direction) async {
+        return file.existsSync();
+      },
+      onDismissed: (direction) {
+        file.deleteSync();
+      },
+    );
   }
 }
