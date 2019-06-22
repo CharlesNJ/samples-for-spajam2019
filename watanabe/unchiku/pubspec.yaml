@@ -19,6 +19,12 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  camera: ^0.5.2
+  path_provider: ^0.4.1
+  image_picker: ^0.6.0
+  image_picker_saver: ^0.1.0
+  flutter_ibm_watson: ^0.0.1
+  dio: ^2.1.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -27,10 +33,6 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  camera: ^0.5.2
-  path_provider: ^0.4.1
-  http: ^0.12.0
-  image_picker_saver: ^0.1.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://www.dartlang.org/tools/pub/pubspec
