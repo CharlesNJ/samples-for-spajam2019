@@ -19,13 +19,28 @@ final String url =
     'https://apiKey:$apiKey@gateway.watsonplatform.net/visual-recognition/api/v3/classify?version=2018-03-19';
 
 final Map<int, String> nameMap = {
-  1: "ラーメン",
-  2: "カレーライス",
+  1: "パン",
+  2: "パスタ",
+  3: "ラーメン",
 };
 
 final Map<int, List<String>> unchikuMap = {
-  1: ["ラーメンは美味しい", "メンマの素材は麻竹という竹ということは知っていましたか？"],
-  2: ["カレーとライス", "カレー&ライス", "カレーのちライス", "キミにときめき恋かもねアワアワ ハングリー精神とめらんないクラクラ"],
+  1: [
+    "パンの消費量世界第1位は、トルコ。1人あたりの年間消費量は168kgです（2014）。日本はトルコの10分の1。",
+    "キリスト教の布教によって伝来したもので、ポルトガル語「páo（ぱお）」に由来する。",
+    "『パンの耳』は、『顔の端っこにある耳』があるのと同じで、パンの端っこにあるから。",
+  ],
+  2: [
+    "日本に広まるきっかけとなったのはキユーピーの缶詰商品（1959）",
+    "「ボロネーゼ(タリアテッレ（平打ち麺）)」=イタリア語 「ボロネーズ」=フランス語 「ミートソース(スパゲティ)」=日本語",
+  ],
+  3: [
+    "ラーメン「系統」：スープ（出汁）の違い。魚介系、濃厚魚介系など。",
+    "2016年におけるラーメンの外食費用の第一位は山形県。",
+    "インスタントラーメン消費量１位は青森県の９２２７ｇ。",
+    "第二次世界大戦後の日本各地の闇市で人気を博した。",
+    "明治初期の頃は「南京そば」、明治中期ごろは「支那そば」「柳麺（りゅうめん）」「老麺（らーめん）」、戦後「中華」へと変化していった。",
+  ],
 };
 
 Future<void> main() async {
@@ -109,52 +124,12 @@ class _HomeBodyState extends State<HomeBody> {
           height: MediaQuery.of(context).size.height * 0.435,
           width: MediaQuery.of(context).size.width,
           child: Padding(
-            padding: EdgeInsets.fromLTRB(28, 12, 28, 12),
+            padding: EdgeInsets.fromLTRB(12, 12, 12, 12),
             child: Container(
-              color: Colors.white,
-              child: isLooding
-                  ? CupertinoActivityIndicator()
-                  : RichText(
-                      text: TextSpan(
-                        children: targetName != null
-                            ? [
-                                TextSpan(
-                                  text: targetName + "\n",
-                                  style: TextStyle(
-                                    fontSize: 26,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.lightBlue[300],
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: (() {
-                                    return unchiku
-                                        .sublist(0, 3)
-                                        .map((s) => "・$s")
-                                        .join("\n");
-                                  })(),
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    color: Colors.grey[700],
-                                  ),
-                                )
-                              ]
-                            : [
-                                TextSpan(
-                                  text: "写真を撮って会話の\nキッカケを作ろう!",
-                                  style: TextStyle(
-                                    fontSize: 28,
-                                    color: Colors.grey[400],
-                                  ),
-                                )
-                              ],
-                        style: TextStyle(
-                          fontSize: 20,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    ),
-            ),
+                color: Colors.white,
+                child: isLooding
+                    ? CupertinoActivityIndicator()
+                    : ListView(children: discription())),
           ),
         ),
         Container(
@@ -197,6 +172,64 @@ class _HomeBodyState extends State<HomeBody> {
     );
   }
 
+  List<Widget> discription() {
+    if (targetName == null) {
+      return [
+        Container(
+          width: MediaQuery.of(context).size.width,
+          child: Text(
+            "写真を撮って会話の\nキッカケを作ろう!",
+            style: TextStyle(
+              fontSize: 28,
+              color: Colors.grey[400],
+            ),
+          ),
+        )
+      ];
+    }
+    List<Widget> children = [];
+    if (targetName != null) {
+      children.add(Container(
+        alignment: Alignment.center,
+        width: MediaQuery.of(context).size.width,
+        child: Text(
+          targetName,
+          softWrap: true,
+          style: TextStyle(
+            fontSize: 26,
+            fontWeight: FontWeight.bold,
+            color: Colors.lightBlue[300],
+          ),
+        ),
+      ));
+    }
+
+    if (unchiku != null) {
+      var u = unchiku.length > 5 ? unchiku.sublist(0, 5) : unchiku;
+      children.addAll(u.map(
+        (s) => Container(
+              width: MediaQuery.of(context).size.width,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(0, 6, 0, 6),
+                child: Text(
+                  "　$s",
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.grey[800],
+                  ),
+                ),
+              ),
+            ),
+      ));
+    }
+    children = ListTile.divideTiles(
+      context: context,
+      tiles: children,
+    ).toList();
+
+    return children;
+  }
+
   Widget takePictureButton() {
     return FlatButton(
       color: Colors.cyan[50],
@@ -212,7 +245,7 @@ class _HomeBodyState extends State<HomeBody> {
                   ),
                 ),
                 Text(
-                  "新たなうんちくを取得",
+                  "新たな話題を取得",
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -229,7 +262,7 @@ class _HomeBodyState extends State<HomeBody> {
                   ),
                 ),
                 Text(
-                  "うんちくを取得",
+                  "話題を取得",
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -255,37 +288,27 @@ class _HomeBodyState extends State<HomeBody> {
           _filePath = filePath;
         });
 
-        // String base64Image = base64Encode(File(_filePath).readAsBytesSync());
-        // http.post(url, body: {
-        //   'threshold': "0.6",
-        //   'classifier_ids': 'DefaultCustomModel_1688366399',
-        //   'images_file': base64Image,
-        // }).then((response) {
-        //   print('Response status: ${response.statusCode}');
-        //   print('Response body: ${response.body}');
-        // });
-
-        // var request = new http.MultipartRequest("POST", Uri.parse(url));
-        // request.fields["threshold"] = "0.6";
-        // request.fields["classifier_ids"] = "DefaultCustomModel_1688366399";
-        // contentType: new MediaType('application', 'x-tar'),
-
         Dio dio = Dio();
         FormData formData = new FormData.from({
-          "threshold": "0.5",
-          "classifier_ids": "DefaultCustomModel_1688366399",
+          "threshold": "0.7",
+          "classifier_ids": "DefaultCustomModel_1131339425",
           "images_file": new UploadFileInfo(new File(_filePath), "upload.jpg")
         });
         var response = await dio.post(url, data: formData);
-        // print(response.data["images"][0]["classifiers"][0]["classes"]);
-        // print(response.data['custom_classes']);
-        final int targetId = response.data['custom_classes'];
-        unchikuMap[targetId].shuffle();
-        setState(() {
-          targetName = nameMap[targetId];
-          unchiku = unchikuMap[targetId];
-          isLooding = false;
-        });
+        print(response.data["images"][0]["classifiers"][0]["classes"][0]);
+        String target =
+            response.data["images"][0]["classifiers"][0]["classes"][0]["class"];
+        int targetId = target == "pan" ? 1 : target == "pasta" ? 2 : 3;
+        print(response.data['custom_classes']);
+        // final int targetId = response.data['custom_classes'];
+        if (unchikuMap[targetId] != null) {
+          unchikuMap[targetId].shuffle();
+          setState(() {
+            targetName = nameMap[targetId];
+            unchiku = unchikuMap[targetId];
+            isLooding = false;
+          });
+        }
       }
     });
   }
