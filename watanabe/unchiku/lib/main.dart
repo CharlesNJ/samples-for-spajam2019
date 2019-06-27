@@ -18,10 +18,18 @@ final String apiKey = 'gXZYooKHyfC5fITM9cyIqmOgo4Ngu_PJF3LwDmQC4tUw';
 final String url =
     'https://apiKey:$apiKey@gateway.watsonplatform.net/visual-recognition/api/v3/classify?version=2018-03-19';
 
+final Map<String, int> targetMap = {
+  "pan": 1,
+  "pasta": 2,
+  "ramen": 3,
+  "sushi": 4,
+};
+
 final Map<int, String> nameMap = {
   1: "パン",
   2: "パスタ",
   3: "ラーメン",
+  4: "寿司",
 };
 
 final Map<int, List<String>> unchikuMap = {
@@ -40,6 +48,9 @@ final Map<int, List<String>> unchikuMap = {
     "インスタントラーメン消費量１位は青森県の９２２７ｇ。",
     "第二次世界大戦後の日本各地の闇市で人気を博した。",
     "明治初期の頃は「南京そば」、明治中期ごろは「支那そば」「柳麺（りゅうめん）」「老麺（らーめん）」、戦後「中華」へと変化していった。",
+  ],
+  4: [
+    "hoge",
   ],
 };
 
@@ -295,12 +306,11 @@ class _HomeBodyState extends State<HomeBody> {
           "images_file": new UploadFileInfo(new File(_filePath), "upload.jpg")
         });
         var response = await dio.post(url, data: formData);
-        print(response.data["images"][0]["classifiers"][0]["classes"][0]);
+
         String target =
             response.data["images"][0]["classifiers"][0]["classes"][0]["class"];
-        int targetId = target == "pan" ? 1 : target == "pasta" ? 2 : 3;
+        int targetId = targetMap[target];
         print(response.data['custom_classes']);
-        // final int targetId = response.data['custom_classes'];
         if (unchikuMap[targetId] != null) {
           unchikuMap[targetId].shuffle();
           setState(() {
